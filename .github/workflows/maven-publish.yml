@@ -12,15 +12,20 @@ jobs:
     strategy:
       matrix:
         include:
-          # amd64：使用 sevenzipjbinding-all-platforms（默认 profile，覆盖大多数平台）
+          # amd64/x86_64：sevenzip-all 覆盖大多数平台；同时产出 Windows 包(.zip, 含 LibreOfficePortable)
+          # 与 Linux 包(.tar.gz)，故 windows-zip=true
           - arch: amd64
             profile: sevenzip-all
-          # arm64：仅引入 sevenzipjbinding-linux-arm64，避免与 all-platforms 同包冲突
+            windows-zip: true
+          # arm64：仅 Linux 包(.tar.gz)。不产出 Windows .zip——该 .zip 由 dist-win32.xml 生成、
+          # 内含 Windows 专属 LibreOfficePortable(.exe)，在 arm64 上无法使用
           - arch: arm64
             profile: sevenzip-linux-arm64
-          # macOS x86_64（Intel）：仅引入 sevenzipjbinding-mac-x86_64
+            windows-zip: false
+          # macOS x86_64（Intel）：仅 macOS 包(.tar.gz)。同上，不产出无用的 Windows .zip
           - arch: mac-x86_64
             profile: sevenzip-mac-x86_64
+            windows-zip: false
     steps:
       # 1. 检出代码
       - name: Checkout
@@ -45,22 +50,31 @@ jobs:
       - name: Maven Build
         run: mvn -B clean package -Dmaven.test.skip=true -P${{ matrix.profile }}
 
-      # 5. 按架构重命名产物（tar.gz 用于 Linux，zip 用于 Windows）
-      - name: Rename artifacts by arch
+      # 5. 按架构重命名产物
+      - name: Rename tar.gz by arch
         run: |
           mkdir -p dist
           mv server/target/kkFileView-*.tar.gz dist/kkFileView-${{ matrix.arch }}.tar.gz
-          mv server/target/kkFileView-*.zip   dist/kkFileView-${{ matrix.arch }}.zip
+      # 仅 x86_64 产出 Windows .zip（含 LibreOfficePortable）；arm64/mac 不产出该无用包
+      - name: Rename Windows zip by arch
+        if: matrix.windows-zip
+        run: |
+          mv server/target/kkFileView-*.zip dist/kkFileView-${{ matrix.arch }}.zip
 
       # 6. 把产物上传为 Actions 制品（7 天自动清理）
-      # 对应云效的 artifacts.name = BUILD_ARTIFACT
-      - name: Upload Build Artifacts
+      # 对应云效的 artifacts.name = BUILD_ARTIFACT（tar.gz 各架构均有；zip 仅 x86_64 有）
+      - name: Upload tar.gz Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: BUILD_ARTIFACT-${{ matrix.arch }}
-          path: |
-            ./dist/kkFileView-${{ matrix.arch }}.tar.gz
-            ./dist/kkFileView-${{ matrix.arch }}.zip
+          path: ./dist/kkFileView-${{ matrix.arch }}.tar.gz
+          retention-days: 7
+      - name: Upload Windows zip Build Artifact
+        if: matrix.windows-zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: BUILD_ARTIFACT-${{ matrix.arch }}-zip
+          path: ./dist/kkFileView-${{ matrix.arch }}.zip
           retention-days: 7
 
   release:

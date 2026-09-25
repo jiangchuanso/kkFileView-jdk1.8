@@ -1,38 +1,49 @@
-target/
-!.mvn/wrapper/maven-wrapper.jar
-
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
-nbproject/private/
-nbbuild/
-dist/
-nbdist/
-.nb-gradle/
-/*.iml
-
-### VS Code ###
-.vscode/
-.DS_Store
-
-server/src/main/cache/
-server/src/main/file/
-
-# 忽略所有以 . 开头的文件/目录（如 .codebuddy 工作记忆目录、各类 IDE/工具隐藏文件）
-# 但保留必要的项目配置：CI 工作流、忽略规则本身、属性配置
+# ===== 以 . 开头的非必要文件 / 文件夹（必要项除外） =====
 .*
-!.github/
 !.gitignore
 !.gitattributes
+!.github/
+!.dockerignore
+!.env.example
+# Maven wrapper 需要纳入版本控制（.mvn 被 .* 忽略，须在其后重新包含）
+!.mvn/
+!.mvn/wrapper/maven-wrapper.jar
+
+# ===== 测试 / 覆盖率产物 =====
+coverage/
+htmlcov/
+test-results/
+playwright-report/
+cypress/screenshots/
+cypress/videos/
+
+# ===== 构建产物 =====
+build/
+dist/
+target/
+out/
+bin/
+*.tsbuildinfo
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.venv/
+venv/
+
+# ===== Node =====
+node_modules/
+
+# ===== 日志 =====
+*.log
+logs/
+
+# ===== 操作系统 =====
+Thumbs.db
+ehthumbs.db
+
+# ===== 项目专属（运行时缓存 / 上传文件） =====
+server/src/main/cache/
+server/src/main/file/

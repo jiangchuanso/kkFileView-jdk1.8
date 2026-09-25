@@ -316,7 +316,10 @@
          使用方式：mvn ... -Psevenzip-linux-arm64 （一旦显式激活某 profile，默认的 sevenzip-all 自动失效）。 -->
     <profiles>
         <!-- 默认（x86_64 / amd64）：all-platforms 已包含 linux-x86_64、windows-x86_64、
-             windows-aarch64、mac-aarch64 等绝大多数平台 -->
+             windows-aarch64、mac-aarch64 等绝大多数平台。
+             同时在本 profile 内额外生成 Windows 包(.zip, 含 LibreOfficePortable)；
+             其它架构 profile(sevenzip-linux-arm64 / sevenzip-mac-x86_64)激活时，
+             本 activeByDefault profile 自动失效，因此不会生成无用的 Windows .zip -->
         <profile>
             <id>sevenzip-all</id>
             <activation>
@@ -329,6 +332,29 @@
                     <version>${sevenzipjbinding.version}</version>
                 </dependency>
             </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>make-win32-assembly</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <configuration>
+                                    <appendAssemblyId>false</appendAssemblyId>
+                                    <descriptors>
+                                        <descriptor>src/main/assembly/dist-win32.xml</descriptor>
+                                    </descriptors>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
         <!-- linux arm64：仅引入对应平台 native 库，不要和 all-platforms 同包 -->
         <profile>
@@ -390,8 +416,10 @@
                 <version>3.4.2</version>
                 <configuration>
                     <appendAssemblyId>false</appendAssemblyId>
+                    <!-- 默认仅产出 Linux/mac 包(.tar.gz)；Windows 包(.zip, 含 LibreOfficePortable)
+                         由 sevenzip-all profile 内的 make-win32-assembly 执行额外生成，
+                         因此 arm64/mac 构建不会产出无用的 Windows .zip -->
                     <descriptors>
-                        <descriptor>src/main/assembly/dist-win32.xml</descriptor>
                         <descriptor>src/main/assembly/dist-linux.xml</descriptor>
                     </descriptors>
                 </configuration>
